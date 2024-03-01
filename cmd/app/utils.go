@@ -1,10 +1,8 @@
 package nnApp
 
 import (
-	"errors"
 	"fmt"
 
-	"github.com/blocklessnetwork/b7s/models/blockless"
 	"github.com/multiformats/go-multiaddr"
 )
 
@@ -32,19 +30,4 @@ func getBootNodeAddresses(addrs []string) ([]multiaddr.Multiaddr, error) {
 	}
 
 	return out, nil
-}
-
-func parseNodeRole(role string) (blockless.NodeRole, error) {
-
-	switch role {
-
-	case blockless.HeadNodeLabel:
-		return blockless.HeadNode, nil
-
-	case blockless.WorkerNodeLabel:
-		return blockless.WorkerNode, nil
-
-	default:
-		return 0, errors.New("invalid node role")
-	}
 }

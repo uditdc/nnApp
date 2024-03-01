@@ -20,8 +20,7 @@ import (
 
 // App defines the basic structure of an "nnApp"
 type App struct {
-	Name        string             `json:"name"` // Name of the app
-	Role        blockless.NodeRole `json:"role"` // Role of the nnApp
+	Name        string `json:"name"` // Name of the app
 	B7sConfig   config.Config
 	PeerDb      *pebble.DB
 	FunctionsDb *pebble.DB
@@ -33,7 +32,6 @@ type App struct {
 func NewApp(name string) (*App, error) {
 	a := &App{
 		Name: name,
-		Role: blockless.HeadNode,
 	}
 
 	// Parse configuration flags
@@ -117,7 +115,7 @@ func (a *App) Run() int {
 
 	// Set node options.
 	opts := []node.Option{
-		node.WithRole(a.Role),
+		node.WithRole(blockless.HeadNode),
 		node.WithConcurrency(a.B7sConfig.Concurrency),
 		node.WithAttributeLoading(a.B7sConfig.LoadAttributes),
 	}
@@ -145,9 +143,7 @@ func (a *App) Run() int {
 
 	// Start node main loop in a separate goroutine.
 	go func() {
-		a.logger.Info().
-			Str("role", a.Role.String()).
-			Msg("Blockless Node starting")
+		a.logger.Info().Msg("Blockless Node starting")
 
 		err := node.Run(ctx)
 		if err != nil {
