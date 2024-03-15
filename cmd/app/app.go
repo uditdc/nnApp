@@ -8,6 +8,7 @@ import (
 
 	"github.com/cockroachdb/pebble"
 	"github.com/rs/zerolog"
+	"github.com/uditdc/nnApp/gateway"
 
 	"github.com/blocklessnetwork/b7s/config"
 	"github.com/blocklessnetwork/b7s/fstore"
@@ -24,6 +25,7 @@ type App struct {
 	B7sConfig   config.Config
 	PeerDb      *pebble.DB
 	FunctionsDb *pebble.DB
+	Gateway     *gateway.Server
 
 	logger zerolog.Logger
 }
@@ -61,6 +63,9 @@ func NewApp(name string) (*App, error) {
 	}
 	a.FunctionsDb = fdb
 
+	gatewayServer := gateway.NewServer()
+	a.Gateway = gatewayServer
+
 	return a, nil
 }
 
@@ -73,7 +78,10 @@ func (a *App) Run() int {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
 
-	// Create a new store.
+	// Create a functions store
+	fstore := fstore.New(a.logger, store.New(a.FunctionsDb), a.B7sConfig.Workspace)
+
+	// Create a peer store.
 	// Get the list of dial back peers.
 	peerstore := peerstore.New(store.New(a.PeerDb))
 	peers, err := peerstore.Peers()
@@ -120,8 +128,6 @@ func (a *App) Run() int {
 		node.WithAttributeLoading(a.B7sConfig.LoadAttributes),
 	}
 
-	fstore := fstore.New(a.logger, store.New(a.FunctionsDb), a.B7sConfig.Workspace)
-
 	// If we have topics specified, use those.
 	if len(a.B7sConfig.Topics) > 0 {
 		opts = append(opts, node.WithTopics(a.B7sConfig.Topics))
@@ -137,6 +143,15 @@ func (a *App) Run() int {
 	// Create the main context.
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	defer a.PeerDb.Close()
+	defer a.FunctionsDb.Close()
+
+	// Setup Gateway
+	gatewayServerErr := a.Gateway.Start(":8082") // Replace with your desired address
+	if gatewayServerErr != nil {
+		a.logger.Error().Msg("Failed to start gRPC server: %v")
+	}
+	defer a.Gateway.Stop()
 
 	done := make(chan struct{})
 	failed := make(chan struct{})

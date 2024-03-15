@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+option go_package = "github.com/uditdc/nnApp/gateway";
+
+package gateway;
+
+service Gateway {
+  rpc Install (InstallRequest) returns (InstallResponse) {}
+  rpc Invoke (InvokeRequest) returns (InvokeResponse) {}
+}
+
+message InstallRequest {
+  string cid = 1;
+  string uri = 2;
+}
+
+message InstallResponse {
+
+}
+
+message InvokeRequest {
+  string functionId = 1;
+  string method = 2;
+  string callData = 3;
+}
+
+message InvokeResponse {
+  string message = 1;
+}
