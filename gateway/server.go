@@ -7,6 +7,7 @@ import (
 
 	pb "github.com/uditdc/nnApp/gateway/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type gatewayServer struct {
@@ -39,6 +40,8 @@ func (s *Server) RegisterService(serviceDesc *grpc.ServiceDesc, serviceImpl inte
 
 // Start starts the gRPC server and listens on the provided address.
 func (s *Server) Start(addr string) error {
+	reflection.Register(s.server)
+
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err

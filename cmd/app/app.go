@@ -74,6 +74,16 @@ func (a *App) Run() int {
 	a.logger.Info().Msg("nnApp starting")
 	a.logger.Info().Msg("nnApp node starting")
 
+	go func() {
+		// Setup Gateway
+		gatewayServerErr := a.Gateway.Start(":8082") // Replace with your desired address
+		if gatewayServerErr != nil {
+			a.logger.Error().Msg("Failed to start gRPC server: %v")
+		}
+
+		defer a.Gateway.Stop()
+	}()
+
 	// Signal catching for clean shutdown.
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt)
@@ -145,13 +155,6 @@ func (a *App) Run() int {
 	defer cancel()
 	defer a.PeerDb.Close()
 	defer a.FunctionsDb.Close()
-
-	// Setup Gateway
-	gatewayServerErr := a.Gateway.Start(":8082") // Replace with your desired address
-	if gatewayServerErr != nil {
-		a.logger.Error().Msg("Failed to start gRPC server: %v")
-	}
-	defer a.Gateway.Stop()
 
 	done := make(chan struct{})
 	failed := make(chan struct{})
