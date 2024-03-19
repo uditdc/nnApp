@@ -6,15 +6,14 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/rs/cors"
 	pb "github.com/uditdc/nnApp/gateway/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/blocklessnetwork/b7s/models/execute"
 	"github.com/blocklessnetwork/b7s/node"
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
 )
 
 type gatewayServer struct {
@@ -26,7 +25,8 @@ type gatewayServer struct {
 type Server struct {
 	server *grpc.Server
 	gatewayServer
-	httpServer *http.Server
+	wrappedGrpc *grpcweb.WrappedGrpcServer
+	httpServer  *http.Server
 }
 
 // NewServer creates a new gRPC server instance.
@@ -37,6 +37,8 @@ func NewServer(n *node.Node) *Server {
 			Node: n,
 		},
 	}
+
+	s.wrappedGrpc = grpcweb.WrapServer(s.server)
 
 	// Register the gatewayServer implementation with the gRPC server
 	pb.RegisterGatewayServer(s.server, s.gatewayServer)
@@ -65,20 +67,16 @@ func (s *Server) Start(grpcAddr, gatewayAddr string) error {
 		}
 	}()
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	mux := runtime.NewServeMux()
-	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
-	if err := pb.RegisterGatewayHandlerFromEndpoint(ctx, mux, grpcAddr, opts); err != nil {
-		log.Fatalf("Failed to register gateway: %v", err)
-	}
-
-	handler := cors.AllowAll().Handler(mux)
-
 	s.httpServer = &http.Server{
-		Addr:    gatewayAddr,
-		Handler: handler,
+		Addr: gatewayAddr,
+		Handler: cors.AllowAll().Handler(http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+			if s.wrappedGrpc.IsGrpcWebRequest(req) {
+				s.wrappedGrpc.ServeHTTP(resp, req)
+				return
+			}
+			// Fall back to other servers
+			http.DefaultServeMux.ServeHTTP(resp, req)
+		})),
 	}
 
 	log.Printf("Starting Gateway server on %s", gatewayAddr)

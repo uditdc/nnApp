@@ -19,6 +19,7 @@ require (
 	github.com/blocklessnetwork/b7s-attributes v0.0.0 // indirect
 	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/cavaliergopher/grab/v3 v3.0.1 // indirect
+	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cockroachdb/errors v1.11.1 // indirect
 	github.com/cockroachdb/logtags v0.0.0-20230118201751-21c54148d20b // indirect
@@ -27,6 +28,7 @@ require (
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20200604182044-b73af7476f6c // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
+	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/elastic/gosigar v0.14.2 // indirect
 	github.com/fatih/color v1.16.0 // indirect
@@ -141,14 +143,16 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240125205218-1f4bbc51befe // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	lukechampine.com/blake3 v1.2.1 // indirect
+	nhooyr.io/websocket v1.8.7 // indirect
 )
 
 require (
 	github.com/blocklessnetwork/b7s v0.4.9
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1
+	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
-	github.com/rs/cors v1.10.1
+	github.com/rs/cors v1.10.1 // indirect
 	golang.org/x/sys v0.16.0 // indirect
 	google.golang.org/grpc v1.62.1
 )
