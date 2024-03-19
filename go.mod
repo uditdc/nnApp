@@ -148,6 +148,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.1
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/rs/cors v1.10.1
 	golang.org/x/sys v0.16.0 // indirect
 	google.golang.org/grpc v1.62.1
 )

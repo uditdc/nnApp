@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/rs/cors"
 	pb "github.com/uditdc/nnApp/gateway/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -73,9 +74,11 @@ func (s *Server) Start(grpcAddr, gatewayAddr string) error {
 		log.Fatalf("Failed to register gateway: %v", err)
 	}
 
+	handler := cors.AllowAll().Handler(mux)
+
 	s.httpServer = &http.Server{
 		Addr:    gatewayAddr,
-		Handler: mux,
+		Handler: handler,
 	}
 
 	log.Printf("Starting Gateway server on %s", gatewayAddr)

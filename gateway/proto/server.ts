@@ -1,4 +1,6 @@
 /* eslint-disable */
+import { grpc } from "@improbable-eng/grpc-web";
+import { BrowserHeaders } from "browser-headers";
 import * as _m0 from "protobufjs/minimal";
 
 export const protobufPackage = "gateway";
@@ -383,35 +385,142 @@ export const InvokeUsage = {
 };
 
 export interface Gateway {
-  Install(request: InstallRequest): Promise<InstallResponse>;
-  Invoke(request: InvokeRequest): Promise<InvokeResponse>;
+  Install(request: DeepPartial<InstallRequest>, metadata?: grpc.Metadata): Promise<InstallResponse>;
+  Invoke(request: DeepPartial<InvokeRequest>, metadata?: grpc.Metadata): Promise<InvokeResponse>;
 }
 
-export const GatewayServiceName = "gateway.Gateway";
 export class GatewayClientImpl implements Gateway {
   private readonly rpc: Rpc;
-  private readonly service: string;
-  constructor(rpc: Rpc, opts?: { service?: string }) {
-    this.service = opts?.service || GatewayServiceName;
+
+  constructor(rpc: Rpc) {
     this.rpc = rpc;
     this.Install = this.Install.bind(this);
     this.Invoke = this.Invoke.bind(this);
   }
-  Install(request: InstallRequest): Promise<InstallResponse> {
-    const data = InstallRequest.encode(request).finish();
-    const promise = this.rpc.request(this.service, "Install", data);
-    return promise.then((data) => InstallResponse.decode(_m0.Reader.create(data)));
+
+  Install(request: DeepPartial<InstallRequest>, metadata?: grpc.Metadata): Promise<InstallResponse> {
+    return this.rpc.unary(GatewayInstallDesc, InstallRequest.fromPartial(request), metadata);
   }
 
-  Invoke(request: InvokeRequest): Promise<InvokeResponse> {
-    const data = InvokeRequest.encode(request).finish();
-    const promise = this.rpc.request(this.service, "Invoke", data);
-    return promise.then((data) => InvokeResponse.decode(_m0.Reader.create(data)));
+  Invoke(request: DeepPartial<InvokeRequest>, metadata?: grpc.Metadata): Promise<InvokeResponse> {
+    return this.rpc.unary(GatewayInvokeDesc, InvokeRequest.fromPartial(request), metadata);
   }
 }
 
+export const GatewayDesc = { serviceName: "gateway.Gateway" };
+
+export const GatewayInstallDesc: UnaryMethodDefinitionish = {
+  methodName: "Install",
+  service: GatewayDesc,
+  requestStream: false,
+  responseStream: false,
+  requestType: {
+    serializeBinary() {
+      return InstallRequest.encode(this).finish();
+    },
+  } as any,
+  responseType: {
+    deserializeBinary(data: Uint8Array) {
+      const value = InstallResponse.decode(data);
+      return {
+        ...value,
+        toObject() {
+          return value;
+        },
+      };
+    },
+  } as any,
+};
+
+export const GatewayInvokeDesc: UnaryMethodDefinitionish = {
+  methodName: "Invoke",
+  service: GatewayDesc,
+  requestStream: false,
+  responseStream: false,
+  requestType: {
+    serializeBinary() {
+      return InvokeRequest.encode(this).finish();
+    },
+  } as any,
+  responseType: {
+    deserializeBinary(data: Uint8Array) {
+      const value = InvokeResponse.decode(data);
+      return {
+        ...value,
+        toObject() {
+          return value;
+        },
+      };
+    },
+  } as any,
+};
+
+interface UnaryMethodDefinitionishR extends grpc.UnaryMethodDefinition<any, any> {
+  requestStream: any;
+  responseStream: any;
+}
+
+type UnaryMethodDefinitionish = UnaryMethodDefinitionishR;
+
 interface Rpc {
-  request(service: string, method: string, data: Uint8Array): Promise<Uint8Array>;
+  unary<T extends UnaryMethodDefinitionish>(
+    methodDesc: T,
+    request: any,
+    metadata: grpc.Metadata | undefined,
+  ): Promise<any>;
+}
+
+export class GrpcWebImpl {
+  private host: string;
+  private options: {
+    transport?: grpc.TransportFactory;
+
+    debug?: boolean;
+    metadata?: grpc.Metadata;
+    upStreamRetryCodes?: number[];
+  };
+
+  constructor(
+    host: string,
+    options: {
+      transport?: grpc.TransportFactory;
+
+      debug?: boolean;
+      metadata?: grpc.Metadata;
+      upStreamRetryCodes?: number[];
+    },
+  ) {
+    this.host = host;
+    this.options = options;
+  }
+
+  unary<T extends UnaryMethodDefinitionish>(
+    methodDesc: T,
+    _request: any,
+    metadata: grpc.Metadata | undefined,
+  ): Promise<any> {
+    const request = { ..._request, ...methodDesc.requestType };
+    const maybeCombinedMetadata = metadata && this.options.metadata
+      ? new BrowserHeaders({ ...this.options?.metadata.headersMap, ...metadata?.headersMap })
+      : metadata ?? this.options.metadata;
+    return new Promise((resolve, reject) => {
+      grpc.unary(methodDesc, {
+        request,
+        host: this.host,
+        metadata: maybeCombinedMetadata ?? {},
+        ...(this.options.transport !== undefined ? { transport: this.options.transport } : {}),
+        debug: this.options.debug ?? false,
+        onEnd: function (response) {
+          if (response.status === grpc.Code.OK) {
+            resolve(response.message!.toObject());
+          } else {
+            const err = new GrpcWebError(response.statusMessage, response.status, response.trailers);
+            reject(err);
+          }
+        },
+      });
+    });
+  }
 }
 
 type Builtin = Date | Function | Uint8Array | string | number | boolean | undefined;
@@ -428,4 +537,10 @@ export type Exact<P, I extends P> = P extends Builtin ? P
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;
+}
+
+export class GrpcWebError extends globalThis.Error {
+  constructor(message: string, public code: grpc.Code, public metadata: grpc.Metadata) {
+    super(message);
+  }
 }

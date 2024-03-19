@@ -17,3 +17,5 @@ plugins:
     out: .
     strategy: all
     path: ./node_modules/ts-proto/protoc-gen-ts_proto
+    opt:
+      - outputClientImpl=grpc-web
