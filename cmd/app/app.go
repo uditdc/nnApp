@@ -25,6 +25,8 @@ type App struct {
 	B7sConfig   config.Config
 	PeerDb      *pebble.DB
 	FunctionsDb *pebble.DB
+	Host        *host.Host
+	Node        *node.Node
 	Gateway     *gateway.Server
 
 	logger zerolog.Logger
@@ -63,31 +65,6 @@ func NewApp(name string) (*App, error) {
 	}
 	a.FunctionsDb = fdb
 
-	gatewayServer := gateway.NewServer()
-	a.Gateway = gatewayServer
-
-	return a, nil
-}
-
-// Run allows the app to perform its specific functionality
-func (a *App) Run() int {
-	a.logger.Info().Msg("nnApp starting")
-	a.logger.Info().Msg("nnApp node starting")
-
-	go func() {
-		// Setup Gateway
-		gatewayServerErr := a.Gateway.Start(":8082") // Replace with your desired address
-		if gatewayServerErr != nil {
-			a.logger.Error().Msg("Failed to start gRPC server: %v")
-		}
-
-		defer a.Gateway.Stop()
-	}()
-
-	// Signal catching for clean shutdown.
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, os.Interrupt)
-
 	// Create a functions store
 	fstore := fstore.New(a.logger, store.New(a.FunctionsDb), a.B7sConfig.Workspace)
 
@@ -97,14 +74,14 @@ func (a *App) Run() int {
 	peers, err := peerstore.Peers()
 	if err != nil {
 		a.logger.Error().Err(err).Msg("could not get list of dial-back peers")
-		return failure
+		return nil, err
 	}
 
 	// Get the list of boot nodes addresses.
 	bootNodeAddrs, err := getBootNodeAddresses(a.B7sConfig.BootNodes)
 	if err != nil {
 		a.logger.Error().Err(err).Msg("could not get boot node addresses")
-		return failure
+		return nil, err
 	}
 
 	// Create libp2p host.
@@ -120,16 +97,9 @@ func (a *App) Run() int {
 	)
 	if err != nil {
 		a.logger.Error().Err(err).Str("key", a.B7sConfig.Host.PrivateKey).Msg("could not create host")
-		return failure
+		return nil, err
 	}
-	defer host.Close()
-
-	a.logger.Info().
-		Str("id", host.ID().String()).
-		Strs("addresses", host.Addresses()).
-		Int("boot_nodes", len(bootNodeAddrs)).
-		Int("dial_back_peers", len(peers)).
-		Msg("created host")
+	a.Host = host
 
 	// Set node options.
 	opts := []node.Option{
@@ -147,14 +117,46 @@ func (a *App) Run() int {
 	node, err := node.New(a.logger, host, peerstore, fstore, opts...)
 	if err != nil {
 		a.logger.Error().Err(err).Msg("could not create node")
-		return failure
+		return nil, err
 	}
+	a.Node = node
+
+	gatewayServer := gateway.NewServer(node)
+	a.Gateway = gatewayServer
+
+	return a, nil
+}
+
+// Run allows the app to perform its specific functionality
+func (a *App) Run() int {
+	a.logger.Info().Msg("nnApp starting")
+	a.logger.Info().Msg("nnApp node starting")
+
+	go func() {
+		// Setup Gateway
+		gatewayServerErr := a.Gateway.Start(":8082", ":8081") // Replace with your desired address
+		if gatewayServerErr != nil {
+			a.logger.Error().Msg("Failed to start gRPC server: %v")
+		}
+
+		defer a.Gateway.Stop()
+	}()
+
+	// Signal catching for clean shutdown.
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt)
+
+	a.logger.Info().
+		Str("id", a.Host.ID().String()).
+		Strs("addresses", a.Host.Addresses()).
+		Msg("created host")
 
 	// Create the main context.
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	defer a.PeerDb.Close()
 	defer a.FunctionsDb.Close()
+	defer a.Host.Close()
 
 	done := make(chan struct{})
 	failed := make(chan struct{})
@@ -163,7 +165,7 @@ func (a *App) Run() int {
 	go func() {
 		a.logger.Info().Msg("Blockless Node starting")
 
-		err := node.Run(ctx)
+		err := a.Node.Run(ctx)
 		if err != nil {
 			a.logger.Error().Err(err).Msg("Blockless Node failed")
 			close(failed)

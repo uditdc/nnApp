@@ -1,0 +1,11 @@
+{
+  "name": "nnApp",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:uditdc/nnApp-alpha.git",
+  "author": "Udit <25996904+uditdc@users.noreply.github.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "ts-proto": "^1.169.1"
+  }
+}

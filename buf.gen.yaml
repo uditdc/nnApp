@@ -1,0 +1,19 @@
+version: v1
+plugins:
+  - plugin: go
+    out: .
+    opt:
+      - paths=source_relative
+  - plugin: go-grpc
+    out: .
+    opt:
+      - paths=source_relative
+  - plugin: grpc-gateway
+    out: .
+    opt:
+      - paths=source_relative
+      - generate_unbound_methods=true
+  - name: ts
+    out: .
+    strategy: all
+    path: ./node_modules/ts-proto/protoc-gen-ts_proto
