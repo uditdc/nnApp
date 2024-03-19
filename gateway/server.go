@@ -103,9 +103,12 @@ func (s gatewayServer) Invoke(ctx context.Context, in *pb.InvokeRequest) (*pb.In
 	// Only run if the function exists
 
 	// Invoke Node Request
-	code, id, _, _, err := s.Node.ExecuteFunction(ctx, execute.Request{
+	code, id, result, _, err := s.Node.ExecuteFunction(ctx, execute.Request{
 		FunctionID: in.GetFunctionId(),
 		Method:     in.GetMethod(),
+		Config: execute.Config{
+			NodeCount: 1,
+		},
 	}, node.DefaultTopic)
 
 	if err != nil {
@@ -113,9 +116,16 @@ func (s gatewayServer) Invoke(ctx context.Context, in *pb.InvokeRequest) (*pb.In
 		return nil, err
 	}
 
+	var res execute.Result
+	for k := range result {
+		res = result[k]
+		break
+	}
+
 	return &pb.InvokeResponse{
-		Code:      code.String(),
+		Code:      string(code),
 		RequestId: id,
-		Result:    nil,
+		Result:    res.Result.Stdout,
+		Usage:     &pb.InvokeUsage{},
 	}, nil
 }
