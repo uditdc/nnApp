@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"io/fs"
 	"log"
 	"net"
 	"net/http"
@@ -44,6 +45,13 @@ func NewServer(n *node.Node) *Server {
 	pb.RegisterGatewayServer(s.server, s.gatewayServer)
 
 	return s
+}
+
+// Register a static client directory with embedded assets
+func (s *Server) RegisterClient(assets fs.FS) {
+	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.FileServer(http.FS(assets)).ServeHTTP(w, r)
+	}))
 }
 
 // RegisterService registers a gRPC service with the server.

@@ -134,7 +134,7 @@ func (a *App) Run() int {
 
 	go func() {
 		// Setup Gateway
-		gatewayServerErr := a.Gateway.Start(":8082", ":8081") // Replace with your desired address
+		gatewayServerErr := a.Gateway.Start(":8081", ":8080") // Replace with your desired address
 		if gatewayServerErr != nil {
 			a.logger.Error().Msg("Failed to start gRPC server: %v")
 		}
