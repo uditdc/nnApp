@@ -3,7 +3,6 @@ package gateway
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/fs"
 	"log"
 	"net"
@@ -68,13 +67,11 @@ func (s *Server) RegisterClient(assets fs.FS) {
 
 		var multiAddrs []string
 		peers := s.Host.Peerstore().Peers()
-		s.Host.Addresses()
 
 		for _, peer := range peers {
 			peerAddrs := s.Host.Peerstore().Addrs(peer)
-			for _, peerAddr := range peerAddrs {
-				addr := fmt.Sprintf("%s/p2p/%s", peerAddr.String(), peer)
-				multiAddrs = append(multiAddrs, addr)
+			for _, addr := range peerAddrs {
+				multiAddrs = append(multiAddrs, addr.String())
 			}
 		}
 
