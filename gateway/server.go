@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"log"
 	"net"
@@ -64,7 +65,20 @@ func (s *Server) RegisterClient(assets fs.FS) {
 
 	http.Handle("/bls/bootnodes", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(s.gatewayServer.Host.Addresses())
+
+		var multiAddrs []string
+		peers := s.Host.Peerstore().Peers()
+		s.Host.Addresses()
+
+		for _, peer := range peers {
+			peerAddrs := s.Host.Peerstore().Addrs(peer)
+			for _, peerAddr := range peerAddrs {
+				addr := fmt.Sprintf("%s/p2p/%s", peerAddr.String(), peer)
+				multiAddrs = append(multiAddrs, addr)
+			}
+		}
+
+		json.NewEncoder(w).Encode(multiAddrs)
 	}))
 }
 
