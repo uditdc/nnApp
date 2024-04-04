@@ -16,7 +16,7 @@ func parseFlags() config.Config {
 		defaultPeerDB       = "peer-db"
 		defaultFunctionDB   = "function-db"
 		defaultConcurrency  = uint(node.DefaultConcurrency)
-		defaultUseWebsocket = false
+		defaultUseWebsocket = true
 		defaultRole         = "head"
 	)
 
