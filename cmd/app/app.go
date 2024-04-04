@@ -121,7 +121,7 @@ func NewApp(name string) (*App, error) {
 	}
 	a.Node = node
 
-	gatewayServer := gateway.NewServer(node)
+	gatewayServer := gateway.NewServer(node, host)
 	a.Gateway = gatewayServer
 
 	return a, nil

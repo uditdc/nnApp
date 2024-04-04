@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"encoding/json"
 	"io/fs"
 	"log"
 	"net"
@@ -12,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
+	"github.com/blocklessnetwork/b7s/host"
 	"github.com/blocklessnetwork/b7s/models/execute"
 	"github.com/blocklessnetwork/b7s/node"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
@@ -20,6 +22,7 @@ import (
 type gatewayServer struct {
 	pb.UnimplementedGatewayServer
 	Node *node.Node
+	Host *host.Host
 }
 
 // Server represents the gRPC server.
@@ -31,11 +34,12 @@ type Server struct {
 }
 
 // NewServer creates a new gRPC server instance.
-func NewServer(n *node.Node) *Server {
+func NewServer(n *node.Node, h *host.Host) *Server {
 	s := &Server{
 		server: grpc.NewServer(),
 		gatewayServer: gatewayServer{
 			Node: n,
+			Host: h,
 		},
 	}
 
@@ -50,7 +54,17 @@ func NewServer(n *node.Node) *Server {
 // Register a static client directory with embedded assets
 func (s *Server) RegisterClient(assets fs.FS) {
 	http.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Set headers
+		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
+		w.Header().Set("Cross-Origin-Embedder-Policy", "require-corp")
+		w.Header().Set("Cross-Origin-Resource-Policy", "cross-origin")
+
 		http.FileServer(http.FS(assets)).ServeHTTP(w, r)
+	}))
+
+	http.Handle("/bls/bootnodes", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(s.gatewayServer.Host.Addresses())
 	}))
 }
 
