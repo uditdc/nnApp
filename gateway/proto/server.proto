@@ -5,17 +5,7 @@ option go_package = "github.com/uditdc/nnApp/gateway";
 package gateway;
 
 service Gateway {
-  rpc Install (InstallRequest) returns (InstallResponse) {}
   rpc Invoke (InvokeRequest) returns (InvokeResponse) {}
-}
-
-message InstallRequest {
-  string cid = 1;
-  string uri = 2;
-}
-
-message InstallResponse {
-
 }
 
 message InvokeRequest {
