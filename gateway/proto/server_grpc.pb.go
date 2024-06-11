@@ -19,15 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Gateway_Install_FullMethodName = "/gateway.Gateway/Install"
-	Gateway_Invoke_FullMethodName  = "/gateway.Gateway/Invoke"
+	Gateway_Invoke_FullMethodName = "/gateway.Gateway/Invoke"
 )
 
 // GatewayClient is the client API for Gateway service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GatewayClient interface {
-	Install(ctx context.Context, in *InstallRequest, opts ...grpc.CallOption) (*InstallResponse, error)
 	Invoke(ctx context.Context, in *InvokeRequest, opts ...grpc.CallOption) (*InvokeResponse, error)
 }
 
@@ -37,15 +35,6 @@ type gatewayClient struct {
 
 func NewGatewayClient(cc grpc.ClientConnInterface) GatewayClient {
 	return &gatewayClient{cc}
-}
-
-func (c *gatewayClient) Install(ctx context.Context, in *InstallRequest, opts ...grpc.CallOption) (*InstallResponse, error) {
-	out := new(InstallResponse)
-	err := c.cc.Invoke(ctx, Gateway_Install_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *gatewayClient) Invoke(ctx context.Context, in *InvokeRequest, opts ...grpc.CallOption) (*InvokeResponse, error) {
@@ -61,7 +50,6 @@ func (c *gatewayClient) Invoke(ctx context.Context, in *InvokeRequest, opts ...g
 // All implementations must embed UnimplementedGatewayServer
 // for forward compatibility
 type GatewayServer interface {
-	Install(context.Context, *InstallRequest) (*InstallResponse, error)
 	Invoke(context.Context, *InvokeRequest) (*InvokeResponse, error)
 	mustEmbedUnimplementedGatewayServer()
 }
@@ -70,9 +58,6 @@ type GatewayServer interface {
 type UnimplementedGatewayServer struct {
 }
 
-func (UnimplementedGatewayServer) Install(context.Context, *InstallRequest) (*InstallResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Install not implemented")
-}
 func (UnimplementedGatewayServer) Invoke(context.Context, *InvokeRequest) (*InvokeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Invoke not implemented")
 }
@@ -87,24 +72,6 @@ type UnsafeGatewayServer interface {
 
 func RegisterGatewayServer(s grpc.ServiceRegistrar, srv GatewayServer) {
 	s.RegisterService(&Gateway_ServiceDesc, srv)
-}
-
-func _Gateway_Install_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InstallRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(GatewayServer).Install(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Gateway_Install_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GatewayServer).Install(ctx, req.(*InstallRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _Gateway_Invoke_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -132,10 +99,6 @@ var Gateway_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "gateway.Gateway",
 	HandlerType: (*GatewayServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "Install",
-			Handler:    _Gateway_Install_Handler,
-		},
 		{
 			MethodName: "Invoke",
 			Handler:    _Gateway_Invoke_Handler,

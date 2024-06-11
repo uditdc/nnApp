@@ -5,14 +5,6 @@ import _m0 from "protobufjs/minimal";
 
 export const protobufPackage = "gateway";
 
-export interface InstallRequest {
-  cid: string;
-  uri: string;
-}
-
-export interface InstallResponse {
-}
-
 export interface InvokeRequest {
   functionId: string;
   method: string;
@@ -22,129 +14,27 @@ export interface InvokeRequest {
 export interface InvokeResponse {
   code: string;
   requestId: string;
-  result: string;
+  result: ResultMap | undefined;
   usage: InvokeUsage | undefined;
 }
 
 export interface InvokeUsage {
 }
 
-function createBaseInstallRequest(): InstallRequest {
-  return { cid: "", uri: "" };
+export interface ResultMap {
+  data: { [key: string]: Result };
 }
 
-export const InstallRequest = {
-  encode(message: InstallRequest, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    if (message.cid !== "") {
-      writer.uint32(10).string(message.cid);
-    }
-    if (message.uri !== "") {
-      writer.uint32(18).string(message.uri);
-    }
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): InstallRequest {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseInstallRequest();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          if (tag !== 10) {
-            break;
-          }
-
-          message.cid = reader.string();
-          continue;
-        case 2:
-          if (tag !== 18) {
-            break;
-          }
-
-          message.uri = reader.string();
-          continue;
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(object: any): InstallRequest {
-    return {
-      cid: isSet(object.cid) ? globalThis.String(object.cid) : "",
-      uri: isSet(object.uri) ? globalThis.String(object.uri) : "",
-    };
-  },
-
-  toJSON(message: InstallRequest): unknown {
-    const obj: any = {};
-    if (message.cid !== "") {
-      obj.cid = message.cid;
-    }
-    if (message.uri !== "") {
-      obj.uri = message.uri;
-    }
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<InstallRequest>, I>>(base?: I): InstallRequest {
-    return InstallRequest.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<InstallRequest>, I>>(object: I): InstallRequest {
-    const message = createBaseInstallRequest();
-    message.cid = object.cid ?? "";
-    message.uri = object.uri ?? "";
-    return message;
-  },
-};
-
-function createBaseInstallResponse(): InstallResponse {
-  return {};
+export interface ResultMap_DataEntry {
+  key: string;
+  value: Result | undefined;
 }
 
-export const InstallResponse = {
-  encode(_: InstallResponse, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
-    return writer;
-  },
-
-  decode(input: _m0.Reader | Uint8Array, length?: number): InstallResponse {
-    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseInstallResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-      }
-      if ((tag & 7) === 4 || tag === 0) {
-        break;
-      }
-      reader.skipType(tag & 7);
-    }
-    return message;
-  },
-
-  fromJSON(_: any): InstallResponse {
-    return {};
-  },
-
-  toJSON(_: InstallResponse): unknown {
-    const obj: any = {};
-    return obj;
-  },
-
-  create<I extends Exact<DeepPartial<InstallResponse>, I>>(base?: I): InstallResponse {
-    return InstallResponse.fromPartial(base ?? ({} as any));
-  },
-  fromPartial<I extends Exact<DeepPartial<InstallResponse>, I>>(_: I): InstallResponse {
-    const message = createBaseInstallResponse();
-    return message;
-  },
-};
+export interface Result {
+  stdout: string;
+  stderr: string;
+  exitCode: number;
+}
 
 function createBaseInvokeRequest(): InvokeRequest {
   return { functionId: "", method: "", callData: "" };
@@ -236,7 +126,7 @@ export const InvokeRequest = {
 };
 
 function createBaseInvokeResponse(): InvokeResponse {
-  return { code: "", requestId: "", result: "", usage: undefined };
+  return { code: "", requestId: "", result: undefined, usage: undefined };
 }
 
 export const InvokeResponse = {
@@ -247,8 +137,8 @@ export const InvokeResponse = {
     if (message.requestId !== "") {
       writer.uint32(18).string(message.requestId);
     }
-    if (message.result !== "") {
-      writer.uint32(26).string(message.result);
+    if (message.result !== undefined) {
+      ResultMap.encode(message.result, writer.uint32(26).fork()).ldelim();
     }
     if (message.usage !== undefined) {
       InvokeUsage.encode(message.usage, writer.uint32(34).fork()).ldelim();
@@ -282,7 +172,7 @@ export const InvokeResponse = {
             break;
           }
 
-          message.result = reader.string();
+          message.result = ResultMap.decode(reader, reader.uint32());
           continue;
         case 4:
           if (tag !== 34) {
@@ -304,7 +194,7 @@ export const InvokeResponse = {
     return {
       code: isSet(object.code) ? globalThis.String(object.code) : "",
       requestId: isSet(object.requestId) ? globalThis.String(object.requestId) : "",
-      result: isSet(object.result) ? globalThis.String(object.result) : "",
+      result: isSet(object.result) ? ResultMap.fromJSON(object.result) : undefined,
       usage: isSet(object.usage) ? InvokeUsage.fromJSON(object.usage) : undefined,
     };
   },
@@ -317,8 +207,8 @@ export const InvokeResponse = {
     if (message.requestId !== "") {
       obj.requestId = message.requestId;
     }
-    if (message.result !== "") {
-      obj.result = message.result;
+    if (message.result !== undefined) {
+      obj.result = ResultMap.toJSON(message.result);
     }
     if (message.usage !== undefined) {
       obj.usage = InvokeUsage.toJSON(message.usage);
@@ -333,7 +223,9 @@ export const InvokeResponse = {
     const message = createBaseInvokeResponse();
     message.code = object.code ?? "";
     message.requestId = object.requestId ?? "";
-    message.result = object.result ?? "";
+    message.result = (object.result !== undefined && object.result !== null)
+      ? ResultMap.fromPartial(object.result)
+      : undefined;
     message.usage = (object.usage !== undefined && object.usage !== null)
       ? InvokeUsage.fromPartial(object.usage)
       : undefined;
@@ -384,8 +276,250 @@ export const InvokeUsage = {
   },
 };
 
+function createBaseResultMap(): ResultMap {
+  return { data: {} };
+}
+
+export const ResultMap = {
+  encode(message: ResultMap, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    Object.entries(message.data).forEach(([key, value]) => {
+      ResultMap_DataEntry.encode({ key: key as any, value }, writer.uint32(10).fork()).ldelim();
+    });
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ResultMap {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseResultMap();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          const entry1 = ResultMap_DataEntry.decode(reader, reader.uint32());
+          if (entry1.value !== undefined) {
+            message.data[entry1.key] = entry1.value;
+          }
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ResultMap {
+    return {
+      data: isObject(object.data)
+        ? Object.entries(object.data).reduce<{ [key: string]: Result }>((acc, [key, value]) => {
+          acc[key] = Result.fromJSON(value);
+          return acc;
+        }, {})
+        : {},
+    };
+  },
+
+  toJSON(message: ResultMap): unknown {
+    const obj: any = {};
+    if (message.data) {
+      const entries = Object.entries(message.data);
+      if (entries.length > 0) {
+        obj.data = {};
+        entries.forEach(([k, v]) => {
+          obj.data[k] = Result.toJSON(v);
+        });
+      }
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ResultMap>, I>>(base?: I): ResultMap {
+    return ResultMap.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ResultMap>, I>>(object: I): ResultMap {
+    const message = createBaseResultMap();
+    message.data = Object.entries(object.data ?? {}).reduce<{ [key: string]: Result }>((acc, [key, value]) => {
+      if (value !== undefined) {
+        acc[key] = Result.fromPartial(value);
+      }
+      return acc;
+    }, {});
+    return message;
+  },
+};
+
+function createBaseResultMap_DataEntry(): ResultMap_DataEntry {
+  return { key: "", value: undefined };
+}
+
+export const ResultMap_DataEntry = {
+  encode(message: ResultMap_DataEntry, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.key !== "") {
+      writer.uint32(10).string(message.key);
+    }
+    if (message.value !== undefined) {
+      Result.encode(message.value, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): ResultMap_DataEntry {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseResultMap_DataEntry();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.key = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.value = Result.decode(reader, reader.uint32());
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): ResultMap_DataEntry {
+    return {
+      key: isSet(object.key) ? globalThis.String(object.key) : "",
+      value: isSet(object.value) ? Result.fromJSON(object.value) : undefined,
+    };
+  },
+
+  toJSON(message: ResultMap_DataEntry): unknown {
+    const obj: any = {};
+    if (message.key !== "") {
+      obj.key = message.key;
+    }
+    if (message.value !== undefined) {
+      obj.value = Result.toJSON(message.value);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<ResultMap_DataEntry>, I>>(base?: I): ResultMap_DataEntry {
+    return ResultMap_DataEntry.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<ResultMap_DataEntry>, I>>(object: I): ResultMap_DataEntry {
+    const message = createBaseResultMap_DataEntry();
+    message.key = object.key ?? "";
+    message.value = (object.value !== undefined && object.value !== null)
+      ? Result.fromPartial(object.value)
+      : undefined;
+    return message;
+  },
+};
+
+function createBaseResult(): Result {
+  return { stdout: "", stderr: "", exitCode: 0 };
+}
+
+export const Result = {
+  encode(message: Result, writer: _m0.Writer = _m0.Writer.create()): _m0.Writer {
+    if (message.stdout !== "") {
+      writer.uint32(10).string(message.stdout);
+    }
+    if (message.stderr !== "") {
+      writer.uint32(18).string(message.stderr);
+    }
+    if (message.exitCode !== 0) {
+      writer.uint32(24).int32(message.exitCode);
+    }
+    return writer;
+  },
+
+  decode(input: _m0.Reader | Uint8Array, length?: number): Result {
+    const reader = input instanceof _m0.Reader ? input : _m0.Reader.create(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseResult();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          if (tag !== 10) {
+            break;
+          }
+
+          message.stdout = reader.string();
+          continue;
+        case 2:
+          if (tag !== 18) {
+            break;
+          }
+
+          message.stderr = reader.string();
+          continue;
+        case 3:
+          if (tag !== 24) {
+            break;
+          }
+
+          message.exitCode = reader.int32();
+          continue;
+      }
+      if ((tag & 7) === 4 || tag === 0) {
+        break;
+      }
+      reader.skipType(tag & 7);
+    }
+    return message;
+  },
+
+  fromJSON(object: any): Result {
+    return {
+      stdout: isSet(object.stdout) ? globalThis.String(object.stdout) : "",
+      stderr: isSet(object.stderr) ? globalThis.String(object.stderr) : "",
+      exitCode: isSet(object.exitCode) ? globalThis.Number(object.exitCode) : 0,
+    };
+  },
+
+  toJSON(message: Result): unknown {
+    const obj: any = {};
+    if (message.stdout !== "") {
+      obj.stdout = message.stdout;
+    }
+    if (message.stderr !== "") {
+      obj.stderr = message.stderr;
+    }
+    if (message.exitCode !== 0) {
+      obj.exitCode = Math.round(message.exitCode);
+    }
+    return obj;
+  },
+
+  create<I extends Exact<DeepPartial<Result>, I>>(base?: I): Result {
+    return Result.fromPartial(base ?? ({} as any));
+  },
+  fromPartial<I extends Exact<DeepPartial<Result>, I>>(object: I): Result {
+    const message = createBaseResult();
+    message.stdout = object.stdout ?? "";
+    message.stderr = object.stderr ?? "";
+    message.exitCode = object.exitCode ?? 0;
+    return message;
+  },
+};
+
 export interface Gateway {
-  Install(request: DeepPartial<InstallRequest>, metadata?: grpc.Metadata): Promise<InstallResponse>;
   Invoke(request: DeepPartial<InvokeRequest>, metadata?: grpc.Metadata): Promise<InvokeResponse>;
 }
 
@@ -394,12 +528,7 @@ export class GatewayClientImpl implements Gateway {
 
   constructor(rpc: Rpc) {
     this.rpc = rpc;
-    this.Install = this.Install.bind(this);
     this.Invoke = this.Invoke.bind(this);
-  }
-
-  Install(request: DeepPartial<InstallRequest>, metadata?: grpc.Metadata): Promise<InstallResponse> {
-    return this.rpc.unary(GatewayInstallDesc, InstallRequest.fromPartial(request), metadata);
   }
 
   Invoke(request: DeepPartial<InvokeRequest>, metadata?: grpc.Metadata): Promise<InvokeResponse> {
@@ -408,29 +537,6 @@ export class GatewayClientImpl implements Gateway {
 }
 
 export const GatewayDesc = { serviceName: "gateway.Gateway" };
-
-export const GatewayInstallDesc: UnaryMethodDefinitionish = {
-  methodName: "Install",
-  service: GatewayDesc,
-  requestStream: false,
-  responseStream: false,
-  requestType: {
-    serializeBinary() {
-      return InstallRequest.encode(this).finish();
-    },
-  } as any,
-  responseType: {
-    deserializeBinary(data: Uint8Array) {
-      const value = InstallResponse.decode(data);
-      return {
-        ...value,
-        toObject() {
-          return value;
-        },
-      };
-    },
-  } as any,
-};
 
 export const GatewayInvokeDesc: UnaryMethodDefinitionish = {
   methodName: "Invoke",
@@ -534,6 +640,10 @@ export type DeepPartial<T> = T extends Builtin ? T
 type KeysOfUnion<T> = T extends T ? keyof T : never;
 export type Exact<P, I extends P> = P extends Builtin ? P
   : P & { [K in keyof P]: Exact<P[K], I[K]> } & { [K in Exclude<keyof I, KeysOfUnion<P>>]: never };
+
+function isObject(value: any): boolean {
+  return typeof value === "object" && value !== null;
+}
 
 function isSet(value: any): boolean {
   return value !== null && value !== undefined;

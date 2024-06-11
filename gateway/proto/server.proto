@@ -17,10 +17,22 @@ message InvokeRequest {
 message InvokeResponse {
   string code = 1;
   string requestId = 2;
-  string result = 3;
+  ResultMap result = 3;
   InvokeUsage usage = 4;
 }
 
 message InvokeUsage {
 
+}
+
+///
+
+message ResultMap {
+  map<string, Result> data = 1;
+}
+
+message Result {
+  string stdout = 1;
+  string stderr = 2;
+  int32 exitCode = 3;
 }

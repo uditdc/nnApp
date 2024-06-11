@@ -62,20 +62,10 @@ func (s *Server) RegisterClient(assets fs.FS) {
 		http.FileServer(http.FS(assets)).ServeHTTP(w, r)
 	}))
 
-	http.Handle("/bls/bootnodes", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	http.Handle("/nnApp/info", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
-		var multiAddrs []string
-		peers := s.Host.Peerstore().Peers()
-
-		for _, peer := range peers {
-			peerAddrs := s.Host.Peerstore().Addrs(peer)
-			for _, addr := range peerAddrs {
-				multiAddrs = append(multiAddrs, addr.String())
-			}
-		}
-
-		json.NewEncoder(w).Encode(multiAddrs)
+		json.NewEncoder(w).Encode(s.Host.Addresses())
 	}))
 }
 
@@ -126,10 +116,10 @@ func (s *Server) Stop() {
 
 // === gatewayServer implementation
 
-func (s gatewayServer) Install(ctx context.Context, in *pb.InstallRequest) (*pb.InstallResponse, error) {
-	log.Printf("InstallRequest: %v, %v", in.GetCid(), in.GetUri())
-	return &pb.InstallResponse{}, nil
-}
+// func (s gatewayServer) Install(ctx context.Context, in *pb.InstallRequest) (*pb.InstallResponse, error) {
+// 	log.Printf("InstallRequest: %v, %v", in.GetCid(), in.GetUri())
+// 	return &pb.InstallResponse{}, nil
+// }
 
 func (s gatewayServer) Invoke(ctx context.Context, in *pb.InvokeRequest) (*pb.InvokeResponse, error) {
 	log.Printf("InvokeRequest: %v, %v, %v", in.GetFunctionId(), in.GetCallData(), in.GetMethod())
@@ -150,16 +140,31 @@ func (s gatewayServer) Invoke(ctx context.Context, in *pb.InvokeRequest) (*pb.In
 		return nil, err
 	}
 
-	var res execute.Result
-	for k := range result {
-		res = result[k]
-		break
-	}
-
 	return &pb.InvokeResponse{
 		Code:      string(code),
 		RequestId: id,
-		Result:    res.Result.Stdout,
+		Result:    ToProtoResultMap(result),
 		Usage:     &pb.InvokeUsage{},
 	}, nil
+}
+
+func ToProtoResultMap(resultMap execute.ResultMap) *pb.ResultMap {
+	protoResultMap := &pb.ResultMap{
+		Data: make(map[string]*pb.Result, len(resultMap)),
+	}
+
+	for peerID, result := range resultMap {
+		protoResult := ToProtoResult(result)
+		protoResultMap.Data[peerID.String()] = protoResult
+	}
+
+	return protoResultMap
+}
+
+func ToProtoResult(result execute.Result) *pb.Result {
+	return &pb.Result{
+		Stdout:   result.Result.Stdout,
+		Stderr:   result.Result.Stderr,
+		ExitCode: int32(result.Result.ExitCode),
+	}
 }
