@@ -52,14 +52,14 @@ func NewApp(name string) (*App, error) {
 	a.B7sConfig.Workspace = workspace
 
 	// Open the pebble peer database.
-	pdb, err := pebble.Open(a.B7sConfig.PeerDatabasePath, &pebble.Options{Logger: &pebbleNoopLogger{}})
+	pdb, err := pebble.Open(a.B7sConfig.PeerDB, &pebble.Options{Logger: &pebbleNoopLogger{}})
 	if err != nil {
 		return nil, err
 	}
 	a.PeerDb = pdb
 
 	// Open the pebble function database.
-	fdb, err := pebble.Open(a.B7sConfig.FunctionDatabasePath, &pebble.Options{Logger: &pebbleNoopLogger{}})
+	fdb, err := pebble.Open(a.B7sConfig.FunctionDB, &pebble.Options{Logger: &pebbleNoopLogger{}})
 	if err != nil {
 		return nil, err
 	}
@@ -85,19 +85,19 @@ func NewApp(name string) (*App, error) {
 	}
 
 	// Create libp2p host.
-	host, err := host.New(a.logger, a.B7sConfig.Host.Address, a.B7sConfig.Host.Port,
-		host.WithPrivateKey(a.B7sConfig.Host.PrivateKey),
+	host, err := host.New(a.logger, a.B7sConfig.Connectivity.Address, a.B7sConfig.Connectivity.Port,
+		host.WithPrivateKey(a.B7sConfig.Connectivity.PrivateKey),
 		host.WithBootNodes(bootNodeAddrs),
 		host.WithDialBackPeers(peers),
-		host.WithDialBackAddress(a.B7sConfig.Host.DialBackAddress),
-		host.WithDialBackPort(a.B7sConfig.Host.DialBackPort),
-		host.WithDialBackWebsocketPort(a.B7sConfig.Host.DialBackWebsocketPort),
-		host.WithWebsocket(a.B7sConfig.Host.Websocket),
-		host.WithWebsocketPort(a.B7sConfig.Host.WebsocketPort),
+		host.WithDialBackAddress(a.B7sConfig.Connectivity.DialbackAddress),
+		host.WithDialBackPort(a.B7sConfig.Connectivity.DialbackPort),
+		host.WithDialBackWebsocketPort(a.B7sConfig.Connectivity.WebsocketDialbackPort),
+		host.WithWebsocket(a.B7sConfig.Connectivity.Websocket),
+		host.WithWebsocketPort(a.B7sConfig.Connectivity.WebsocketPort),
 	)
 
 	if err != nil {
-		a.logger.Error().Err(err).Str("key", a.B7sConfig.Host.PrivateKey).Msg("could not create host")
+		a.logger.Error().Err(err).Str("key", a.B7sConfig.Connectivity.PrivateKey).Msg("could not create host")
 		return nil, err
 	}
 
