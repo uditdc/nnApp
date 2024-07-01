@@ -95,10 +95,12 @@ func NewApp(name string) (*App, error) {
 		host.WithWebsocket(a.B7sConfig.Host.Websocket),
 		host.WithWebsocketPort(a.B7sConfig.Host.WebsocketPort),
 	)
+
 	if err != nil {
 		a.logger.Error().Err(err).Str("key", a.B7sConfig.Host.PrivateKey).Msg("could not create host")
 		return nil, err
 	}
+
 	a.Host = host
 
 	// Set node options.
